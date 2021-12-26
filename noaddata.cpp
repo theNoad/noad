@@ -37,7 +37,7 @@
 #define GRAB_WIDTH  768
 #define GRAB_HEIGHT 576
 
-int SysLogLevel = 3;
+int SysLogLevel = 1;
 #define IS_TOP_LEFT  (m_nLogoCorner == UNKNOWN || m_nLogoCorner == TOP_LEFT)
 #define IS_TOP_RIGHT (m_nLogoCorner == UNKNOWN || m_nLogoCorner == TOP_RIGHT)
 #define IS_BOT_RIGHT (m_nLogoCorner == UNKNOWN || m_nLogoCorner == BOT_RIGHT)
@@ -46,10 +46,7 @@ int SysLogLevel = 3;
 noadData::noadData()
 {
   bYUVSource = true;
-  /** v4l values */
-  m_bGrabberReady = false;
-  m_nGrabberChannel = 0; // TV 0 Video 1
-  m_nGrabberFreq = 772;  // K02
+  bUseExternalMem = false;
 
   /** set screen size for unknown tv cards*/
   m_nGrabWidth = GRAB_WIDTH;
@@ -376,23 +373,24 @@ void noadData::setYUVGreyCorners()
   CToolBox tool;
 
   int count0=0, count3=0;
-  int topend = m_nSizeY+m_nBorderYTop;
+  int topend = m_nBorderYTop+m_nSizeY;
   int bottStart = m_nGrabHeight-m_nBorderYBot-m_nSizeY;
   int bottEnd = m_nGrabHeight-m_nBorderYBot;
-  for ( int y = 0; y < m_nGrabHeight; y++ )
+  register int linestart;
+  int rightLogoOffset = m_nGrabWidth-m_nBorderX-m_nSizeX;
+  for ( int y = m_nBorderYTop; y<topend; y++)
   {
-    if ( y>=m_nBorderYTop && y<topend)
-    {
-       memcpy(&m_chGreyCorner0[count0],&video_buffer_mem[y*m_nGrabWidth+m_nBorderX],m_nSizeX);
-       memcpy(&m_chGreyCorner1[count0],&video_buffer_mem[y*m_nGrabWidth+(m_nGrabWidth-m_nBorderX-m_nSizeX)],m_nSizeX);
-       count0 += m_nSizeX;
-    }
-    if ( y>=bottStart && y<bottEnd )
-    {
-       memcpy(&m_chGreyCorner3[count3], &video_buffer_mem[y*m_nGrabWidth+m_nBorderX],m_nSizeX);
-       memcpy(&m_chGreyCorner2[count3],&video_buffer_mem[y*m_nGrabWidth+(m_nGrabWidth-m_nBorderX-m_nSizeX)],m_nSizeX);
-       count3 += m_nSizeX;
-    }
+     linestart = y*m_nGrabWidth;
+     memcpy(&m_chGreyCorner0[count0],&video_buffer_mem[linestart+m_nBorderX],m_nSizeX);
+     memcpy(&m_chGreyCorner1[count0],&video_buffer_mem[linestart+rightLogoOffset],m_nSizeX);
+     count0 += m_nSizeX;
+  }
+  for ( int y = bottStart; y<bottEnd; y++ )
+  {
+     linestart = y*m_nGrabWidth;
+     memcpy(&m_chGreyCorner3[count3],&video_buffer_mem[linestart+m_nBorderX],m_nSizeX);
+     memcpy(&m_chGreyCorner2[count3],&video_buffer_mem[linestart+rightLogoOffset],m_nSizeX);
+     count3 += m_nSizeX;
   }
 }
 
@@ -891,6 +889,22 @@ void noadData::checkMonoFrame( int framenum, unsigned char **_src)
 #endif
   m_nMonoFrameValue =  iyCount+iuCount+ivCount;
   delete [] iSet;
+}
+
+void noadData::setUseExternalMem(bool b)
+{
+  if( !bUseExternalMem )
+  {
+    delete [] video_buffer_mem;
+    video_buffer_mem = NULL;
+  }
+  bUseExternalMem = b;
+}
+
+void noadData::setExternalMem(char *extMem)
+{
+  setUseExternalMem(true);
+  video_buffer_mem = extMem;
 }
 
 #ifdef VNOAD

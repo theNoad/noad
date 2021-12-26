@@ -28,6 +28,14 @@
 extern noadData *data;
 extern CControl* cctrl;
 
+//statistic data
+extern int totalFrames;
+extern int totalDecodedFrames;
+extern int decodedFramesForLogoDetection;
+extern int decodedFramesForLogoCheck;
+extern int secsForLogoDetection;
+extern int secsForLogoCheck;
+extern int secsForScan;
 
 bool detectBlacklines(int _index, int iFramesToCheck, cFileName *cfn, int& iTopLines, int& iBottomLines);
 bool detectBlacklines(cMarks *marks, cFileName *cfn, int& iTopLines, int& iBottomLines);
@@ -40,7 +48,7 @@ int drawCallback( void *buffer, int width, int height, void *yufbuf );
 int BlacklineCallback( void *buffer, int width, int height, void *yufbuf );
 int BlackframeCallback( void *buffer, int width, int height, void *yufbuf );
 int checkCallback( void *buffer, int width, int height, void *yufbuf );
-bool checkLogo(cFileName *cfn);
+bool checkLogo(cFileName *cfn, int startpos);
 bool doLogoDetection(cFileName *cfn, int curIndex);
 void reInitNoad(int top, int bottom );
 bool detectLogo( cFileName *cfn, char* logoname );
@@ -67,7 +75,7 @@ bool checkBlacklineOnMarks(cMarks *marks, cFileName *cfn);
 void MarkCleanup(cMarks *marks, cFileName *cfn);
 const char *getVersion();
 
-int doX11Scan(noadData *thedata, char *fName, int iNumFrames );
+int doX11Scan(noadData *thedata, const char *fName, int iNumFrames );
 const char *myTime(time_t tim);
 void clearStats();
 #endif

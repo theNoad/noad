@@ -1,0 +1,63 @@
+#! /bin/sh
+if test $# -lt 2
+then
+   echo "usage:"
+   echo "stat2html <statfile> <htmlfile> [videodir]"
+   exit -1
+fi
+echo "<html>" > $2
+echo "<body>" >> $2
+echo "<table border="1">" >> $2
+echo "<tr>" >> $2
+echo "<th>Scan-Datum</th>" >> $2
+echo "<th>Gesamtframes<br/>(Laufzeit)</th>" >> $2
+echo "<th>decodierte<br/>Frames</th>" >> $2
+echo "<th>decodierte<br/>Frames<br/>f&uuml;r<br/>Logoerkennung</th>" >> $2
+echo "<th>Zeit<br/>f&uuml;r<br/>Logoerkennung<br/>(Sek.)</th>" >> $2
+echo "<th>decodierte<br/>Frames<br/>f&uuml;r<br/>Logopr&uuml;fung</th>" >> $2
+echo "<th>Zeit<br/>f&uuml;r<br/>Logopr&uuml;fung<br/>(Sek.)</th>" >> $2
+echo "<th>Gesamtzeit<br/>f&uuml;r<br/>Scan<br/>(Sek.)</th>" >> $2
+echo "<th>Name der Aufzeichnung</th>" >> $2
+echo "<th>Kommentar</th>" >> $2
+echo "</tr>" >> $2
+if [ $# -gt 2 ]
+then
+  #sed -e 'i\<tr><td>' -e 's/;/<\/td><td>/g' -e 's/(/<br\/>(/' -e 'a\<\/td><\/tr>' $1 >>$2
+  sed -e 'i\<tr><td>' \
+     -e s/$3// \
+     -e 's/\/\///g'\
+     -e 's/\//<br\/>/g'\
+     -e 's/,/<br\/>/'\
+     -e 's/ /<br\/>/'\
+     -e 's/;/<\/td><td align="right">/1'\
+     -e 's/;/<\/td><td align="right">/1'\
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td>/g'\
+     -e 's/(/<br\/>(/'\
+     -e 's/add your comment here//'\
+     -e 'a\<\/td><\/tr>' $1 >>$2
+else
+  sed -e 'i\<tr><td>' \
+     -e 's/\/\///g'\
+     -e 's/\//<br\/>/g'\
+     -e 's/,/<br\/>/'\
+     -e 's/ /<br\/>/'\
+     -e 's/;/<\/td><td align="right">/1'\
+     -e 's/;/<\/td><td align="right">/1'\
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td align="right">/1' \
+     -e 's/;/<\/td><td>/g'\
+     -e 's/(/<br\/>(/'\
+     -e 's/add your comment here//'\
+     -e 'a\<\/td><\/tr>' $1 >>$2
+fi
+echo "</table>" >> $2
+echo "</body>" >> $2
+echo "</html>" >> $2

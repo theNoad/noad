@@ -1,4 +1,11 @@
 #! /bin/sh
-
-find $1 -follow -type d -name '*.rec' -exec ./noad nice '{}' ';'
+if test $# -lt 1
+then
+   echo "usage:"
+   echo "allnoadnice <videodir> [noad-args]"
+   exit -1
+fi
+${vdir:=${1}}
+shift
+do find $vdir -follow -type d -name '*.rec' -exec ./noad $* nice '{}' ';' 
 

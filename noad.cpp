@@ -42,7 +42,7 @@ extern "C"
 //#include "video_out.h"
 #endif
 
-static const char *VERSION = "0.3.1";
+static const char *VERSION = "0.3.2";
 
 }
 
@@ -138,6 +138,7 @@ bool bMarkChanged = false;
 int bFrameDisplayed = 0;
 
 //statistic data
+int totalFrames = 0;
 int totalDecodedFrames = 0;
 int decodedFramesForLogoDetection = 0;
 int decodedFramesForLogoCheck = 0;
@@ -602,7 +603,7 @@ int checkedFrames;
 // width:  aktuelle bildbreite
 // width:  aktuelle bildhöhe
 // yufbuf: array von pointern auf die y/u/v-daten
-bool StdCallBack(void *buffer, int width, int height, void */*yufbuf*/ )
+bool StdCallBack(void *buffer, int width, int height, void *yufbuf )
 {
   totalDecodedFrames++;
   // soll der Frame ignoriert werden
@@ -612,7 +613,7 @@ bool StdCallBack(void *buffer, int width, int height, void */*yufbuf*/ )
     iIgnoreFrames--;
     return false;
   }
-  if( data && buffer )
+  if( data && buffer && yufbuf)
   {
     // bei Änderung der Bildgrösse daten zurücksetzen
     if( width != data->m_nGrabWidth || height != data->m_nGrabHeight )
@@ -620,54 +621,13 @@ bool StdCallBack(void *buffer, int width, int height, void */*yufbuf*/ )
       delete cctrl;
       cctrl = NULL;
       data->setGrabSize( width, height );
+      /*
       delete [] data->video_buffer_mem;
       data->video_buffer_mem = NULL;
+      */
     }
-    // buffer-größe ermitteln (ausreichend für RGB32-Bilder)
-    int size = width * height * 4;
-    // buffer anlegen
-    if( data->video_buffer_mem == NULL )
-      data->video_buffer_mem = new char[size];
-
-    char *src, *dst;
-    src = (char *)buffer;
-    dst = data->video_buffer_mem;
-#ifndef RGB24_INCOMING
-    size = width * height;
-    for (int i = 0; i < size; i++)
-    {
-    	//RGB 24
-    	*dst++ = src[0];	// rot
-    	*dst++ = src[1]; // grün
-    	*dst++ = src[2]; // blau
-    	src += 3;
-/*
-		// RGB 32
-    	*dst++ = src[2];	// rot
-    	*dst++ = src[1]; // grün
-    	*dst++ = src[0]; // blau
-    	src += 4;
-*/
-/*
-    	*dst++ = *src++;
-    	*dst++ = *src++;
-    	*dst++ = *src++;
-    	src++;
-*/
-    }
-#else
-    if( data->isYUVSource() )
-      size = width * height;
-    else
-    {
-      #ifdef USE_RGB32
-      size = width * height * 4;
-      #else
-      size = width * height * 3;
-      #endif
-    }
-    memcpy(data->video_buffer_mem, buffer, size );
-#endif
+    data->setExternalMem(buffer);
+    //usleep(100);
     return true;
   }
   return false;
@@ -785,22 +745,27 @@ int Length;								// frame-lenght of current frame
 uint8_t * end;							// pointer to frame-end
 #define FRAMES_TO_CHECK 3000
 
+#define CHECKLOGO_FRAMES 250
+#define CHECKLOGO_BLOCKS 10
+#define CHECKLOGO_BLOCKFRAMES 50
+#define CHECKLOGO_DIST  (5*FRAMESPERMIN)
+
 // check for logo in some parts of the recording
-// check 5*100 frames, logo should be bvisible in at least 250 frames
-bool checkLogo(cFileName *cfn)
+// check 10*50 frames, logo should be bvisible in at last #FRAMES_FOR_CHECKLOGO frames
+bool checkLogo(cFileName *cfn, int startpos)
 {
-  dsyslog(LOG_INFO, "checklogo for %d frames", 250);
+  dsyslog(LOG_INFO, "checklogo for %d frames", CHECKLOGO_FRAMES);
   int iLogosFound = 0;
   cbfunc cbf_old = getCB_Func();
   setCB_Func(checkCallback);
   //  data->m_pCheckLogo->reset();
 
-  int index = 5*FRAMESPERMIN;
+  int index = startpos;
 
   index = cIF->GetNextIFrame( index, true, &FileNumber, &FileOffset, &Length, true);
-  for( int i = 0; i < 10 && iLogosFound < 250; i++ )
+  for( int i = 0; i < CHECKLOGO_BLOCKS && iLogosFound < CHECKLOGO_FRAMES; i++ )
   {
-    for( int ii = 1; ii <= 50 && iLogosFound < 250; ii++ )
+    for( int ii = 1; ii <= CHECKLOGO_BLOCKFRAMES && iLogosFound < CHECKLOGO_FRAMES; ii++ )
     {
       cfn->SetOffset( FileNumber, FileOffset);
       //end = readBuffer + read (cfn->File(), readBuffer, Length > MAXFRAMESIZE ? MAXFRAMESIZE : Length);
@@ -813,12 +778,12 @@ bool checkLogo(cFileName *cfn)
       //dsyslog(LOG_INFO, "checklogo %d %d", i * 50 + ii, iLogosFound);
       //sleep(1);
     }
-    index += 5*FRAMESPERMIN;
+    index += CHECKLOGO_DIST;
     index = cIF->GetNextIFrame( index, true, &FileNumber, &FileOffset, &Length, true);
   }
   setCB_Func(cbf_old);
-  dsyslog(LOG_INFO, "checklogo for %d frames gives %d", 250, iLogosFound >= 250);
-  return iLogosFound >= 250;
+  dsyslog(LOG_INFO, "checklogo for %d frames gives %d", CHECKLOGO_FRAMES, iLogosFound >= CHECKLOGO_FRAMES);
+  return iLogosFound >= CHECKLOGO_FRAMES;
 }
 
 // try to detect a Logo within the next #FRAMES_TO_CHECK frames
@@ -887,7 +852,7 @@ bool detectLogo( cFileName *cfn, char* logoname )
     if( data->loadCheckData(logoname, true) )
     {
       start = time(NULL);
-      if( checkLogo( cfn ) )
+      if( checkLogo( cfn,0 ) )
       {
         decodedFramesForLogoCheck = totalDecodedFrames;
         end = time(NULL);
@@ -920,7 +885,7 @@ bool detectLogo( cFileName *cfn, char* logoname )
     //reInitNoad( iTopLines, iBottomLines );
     reInitNoad( 0,0 );
     if( doLogoDetection(cfn, iAStartpos[iPart] ) )
-      if( checkLogo( cfn ) )
+      if( checkLogo( cfn, iAStartpos[iPart] ) )
       {
         end = time(NULL);
         secsForLogoDetection = end - start;
@@ -1902,44 +1867,6 @@ void MarkCleanup(cMarks *marks, cFileName *cfn)
   listMarks( marks);
   cMark *m = marks->GetNext(-1);
   cMark *mprev = m;
-/*
-  iLastPos = m->position;
-  if( m != NULL )
-    m = marks->GetNext(m->position);
-
-  while( m != NULL )
-  {
-    iDiff = m->position - iLastPos;
-    asprintf(&cpos, "%s", m->ToText(false));
-    asprintf(&cdiff, "%s", IndexToHMSF(iDiff, false));
-    dsyslog(LOG_INFO, "Mark: %d %s #frames %d duration %s", m->position, cpos, iDiff, cdiff);
-    iLastPos = m->position;
-    if( iDiff > 0 && iDiff < ACTIVEMINMARKDURATION )
-    {
-      if( mprev != NULL )
-      {
-        dsyslog(LOG_INFO, "del Marks: %d %d", mprev->position, m->position );
-        marks->Del(mprev);
-        marks->Del(m);
-        m = marks->GetNext(-1);
-        mprev = NULL;
-        iLastPos = 0;
-        bMarkChanged = true;
-      }
-    }
-    else
-    {
-      m = marks->GetNext(m->position);
-      mprev = m;
-      if( m != NULL )
-      {
-        iLastPos = m->position;
-        m = marks->GetNext(m->position);
-      }
-    }
-  }
-*/
-
   listMarks( marks);
 
   m = marks->GetNext(-1);
@@ -1947,9 +1874,6 @@ void MarkCleanup(cMarks *marks, cFileName *cfn)
   while( m != NULL )
   {
     iDiff = m->position - iLastPos;
-    //asprintf(&cpos, "%s", m->ToText(false));
-    //asprintf(&cdiff, "%s", IndexToHMSF(iDiff, false));
-    //dsyslog(LOG_INFO, "Mark: %d %s #frames %d duration %s", m->position, cpos, iDiff, cdiff);
     iLastPos = m->position;
     if( iDiff > 0 && iDiff < MINMARKDURATION )
     {
@@ -2062,6 +1986,7 @@ int scanRecord( int iNumFrames)
   time_t start, startall;
   time_t end;
 
+  totalFrames = 0;
   totalDecodedFrames = 0;
   decodedFramesForLogoDetection = 0;
   decodedFramesForLogoCheck = 0;
@@ -2074,6 +1999,7 @@ int scanRecord( int iNumFrames)
   cIF = new cNoadIndexFile(filename,false);
   if( cIF == NULL )
     return -1;
+  totalFrames = cIF->Last();
   if(cIF->Last() == iNumFrames)
   {
     delete cIF;
@@ -2144,6 +2070,7 @@ int scanRecord( int iNumFrames)
   end = time(NULL);
   secsForScan = end - startall;
 
+  dsyslog(LOG_INFO, "totalFrames %d",totalFrames );
   dsyslog(LOG_INFO, "totalDecodedFrames %d",totalDecodedFrames );
   dsyslog(LOG_INFO, "decodedFramesForLogoDetection %d",decodedFramesForLogoDetection );
   dsyslog(LOG_INFO, "decodedFramesForLogoCheck %d",decodedFramesForLogoCheck );
@@ -2163,12 +2090,12 @@ const char *getVersion()
 }
 
 
-int doX11Scan(noadData *thedata, char *fName, int iNumFrames )
+int doX11Scan(noadData *thedata, const char *fName, int iNumFrames )
 {
   if( fName == NULL )
     return -1;
   else
-    filename = fName;
+    filename = (char *)fName;
   data = thedata;
   demux_track = 0xe0;
   mpeg2dec = mpeg2_init ();
@@ -2186,6 +2113,7 @@ const char *myTime(time_t tim)
 
 void clearStats()
 {
+  totalFrames = 0;
   totalDecodedFrames = 0;
   decodedFramesForLogoDetection = 0;
   decodedFramesForLogoCheck = 0;

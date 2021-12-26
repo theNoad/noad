@@ -11,19 +11,36 @@ Ergebnisse in die marks.vdr.
 
 Erzeugung:
 Vor dem erzeugen von noad ist die libmpeg2, Version 0.3.1, zu installieren. (siehe http://libmpeg2.sourceforge.net)
-Danach einfach make im source.Verzeichnis aufrufen.
+Danach einfach make im Source-Verzeichnis aufrufen.
 
 Aufruf:
-noad [- | after | before | nice] <record>
-      -         direktaufruf, volle Prozessorleistung wird genutzt
-      nice      direktaufruf, noad läuft mit geringer Priorität
-      after     wird von VDR übergeben, noad läuft als Hintergrundprozess mit geringer Priorität
-      before    wird von VDR übergeben, noad ignoriert diesen Aufruf
+noad [options] cmd <record>
+     options:
+       -s <filename>,  --statisticfile=<file> Name der datei, in der Statistik-Daten gespeichert werden
+       -v,             --verbose              erhöht den Log-Level, kann mehrfach angegeben werden
+       -b,             --background           lässt noad als Hintergrundprozess laufen
+     cmd: eins von
+       before      von vdr, wenn mit der Option "-r" in vdr eingebunden
+                   noad beendet sich sofort, wenn dieses cmd gegeben wird
+       after       von vdr, wenn mit der Option "-r" in vdr eingebunden
+       -           dummy-parameter für Direktaufruf
+       nice        noad läuft mit geringer Priorität
+       <record>    vollständiger Pfad des Verzeichnisses mit der Aufnahme, die bearbeitet werden soll
 
-      <record> vollständiger Pfad des Verzeichnisses mmit der Aufnahme, die bearbeitet werden soll
 
-Beispiel:
+Beispiele:
+  Direktaufruf, Scan mit voller Prozessorleistung:
   noad - /video/Akte_x/2003-07-18.22.08.50.50.rec
+
+  Direktaufruf, Scan mit voller Prozessorleistung, Statistikdaten nach /video/noadstat schreiben:
+  noad --statisticfile=/video/noadstat - /video/Akte_x/2003-07-18.22.08.50.50.rec
+
+  Direktaufruf, Scan als Hintergrundprozess mit geringer Prozessorleistung:
+  noad nice --background /video/Akte_X/Roland/2003-08-22.22.03.99.99.rec
+
+  Einbindung in VDR:
+  vdr -r'noad --statisticfile=/video/noadstat'
+
 
 noad benötigt Schreibrechte in den Aufnahmeverzeichnissen!
 
@@ -32,7 +49,40 @@ noad kann als Programm zur Nachbearbeitung einer Aufnahme über den Paramter -r b
 Bei Systemen, die über den VDR automatisch abgeschaltet werden, ist zu beachten, daß der Rechner nicht runtergefahren
 werden sollte, solange noad noch aktiv ist.
 
-Für das Bearbeiten vorhandener Aufnahmen sind 2 Scripte dabei:
-Fehlermeldungen, Anregungen, Hinweise und auch Erfahrungsberichte an:
+Für das Bearbeiten vorhandener Aufnahmen sind 3 Scripte dabei:
+allnoad
+Aufruf: allnoad <videodir> [additional_noad_args]
+        ruft noad mit dem cmd "-" für alle vorhandenen Aufnahmen im Videoverzeichnis auf
+        allnoadnice /video --statisticfile=/video/noadstat -v
+
+allnoadnice
+Aufruf: allnoadnice <videodir> [noad-args]
+        ruft noad mit dem cmd "nice" für alle vorhandenen Aufnahmen im Videoverzeichnis auf
+        Beispiel:
+        allnoadnice /video --statisticfile=/video/noadstat --verbose --verbose
+
+allnewnoad
+Aufruf: allnewnoad - <videodir>  [additional_noad_args]
+        oder
+        allnewnoad nice <videodir>  [additional_noad_args]
+        ruft noad mit dem cmd "-" oder "nice" für alle vorhandenen Aufnahmen im Videoverzeichnis auf,
+        die bisher noch nicht gescannt wurden.  Benötigt Zugriff auf das Script "noadifnew"
+Dies 3 Scripte sollten nicht mit dem Parameter "--background" aufgerufen werden, da sonst die Scans für
+alle Aufnahmen gleichzeitig gestartet werden.
+
+
+noad speichert das erkannte Logo im Verzeichnis der Aufnahme unter dem Namen "cur.logo". Dieses Logo wird bei
+einem erneuten Aufruf wiederverwendet, so daß die Logoerkennung dann entfallen kann. Das Script "allnewnoad" erkennt
+an dieser Datei, daß die Aufnahme bereits gescannt wurde.
+Die gespeicherten Logos können mit dem script "clearlogos" entfernt werden.
+
+Statistikdaten:
+Wird noad mit "--statisticfile=<file>" aufgerufen, werden in die angegebene Datei einige Statistikdaten
+geschrieben. Für jede gescannte Aufnahme wird eine Zeile in die Datei geschrieben. Das letzte Feld in der Zeile
+enthält immer den Text "add your comment here". Dieses Feld kann mit Bemerkungen über den Erfolg des Scans überschrieben
+werden, dabei dürfen keine Zeilenumbrüche eingefügt werden. Die Statisik-Daten könen mit dem Script "stat2html" in
+eine HTML-Datei umgewandelt werden.
+
+Fehlermeldungen, Anregungen, Hinweise und auch Erfahrungsberichte, am besten als noad-Statistik-File, an:
 theNoad@SoftHome.net
 

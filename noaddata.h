@@ -101,6 +101,7 @@ typedef struct pattern pattern;
 class noadData
 {
   bool bYUVSource;
+  bool bUseExternalMem;
 public:
   noadData();
   ~noadData();
@@ -148,8 +149,10 @@ public:
   /**  width of grabbing frame*/
   int m_nGrabWidth;
   /** char pointer to grabbed memory */
+private:
   char* video_buffer_mem;
 
+public:
   #ifdef VNOAD
   char* video_buffer_mem2[NUMPICS];
   char* video_buffer_mem3[NUMPICS];
@@ -161,15 +164,6 @@ public:
   int m_nMinAverage;
   /** number of frames the testlines have to live */
   int m_nCheckFrames;
-  /** value of grabbing channel
-    * standard: 0->tuner, 1->video1, 2->video2 */
-  int m_nGrabberChannel;
-  /** is true if the v4l interface has init successful */
-  bool m_bGrabberReady;
-  /** contains the frequency for tuner */
-  int m_nGrabberFreq;
-  /** pointer to the v4l picture struct */
-  struct video_picture* pv_picture;
 
   // called to clean the testline list
   void deleteTestlines( testlines** tl );
@@ -213,6 +207,12 @@ public:
   bool loadCheckData( const char *name, bool bFullnameGiven = false );
   void setGrabSize( int width, int height );
   char infoLine[256];
+
+  void setUseExternalMem(bool b);
+  bool isUseExternalMem() { return bUseExternalMem; }
+  void setExternalMem(char *extMem);
+  void setExternalMem(void *extMem) { setExternalMem((char*)extMem); }
+  char *getVideoBuffer() { return video_buffer_mem; }
 
   #ifdef VNOAD
   void storePic(int n);
