@@ -1,0 +1,2 @@
+find /video0 -follow -type d -name '*.rec' -exec ./noad nice '{}' ';'
+

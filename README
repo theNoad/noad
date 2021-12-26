@@ -1,0 +1,38 @@
+noad ist ein Programm, daß an Hand der Senderlogos eine Erkennung von Werbeeinblendungen vornimmt und Schnittmarken zum
+entfernen der Werbung erzeugt.
+noad kann direkt aufgerufen werden oder als command für vdr eingebunden werden(option -r oder --recording in vdr).
+Die Logo-Erkennung basiert auf einem Programm von Thorsten Janke, das Originalprogramm und die dazugehörige
+Diplomarbeit sind hier zu finden: http://www.ktet.fh-muenster.de/ina/node1.html.
+Neben der reinen Logo-Erkennung werden auch weitere visuelle Merkmale zur Erkennung der Werbeblöcke herangezogen. Bei Aufnahmen,
+die oben und unten schwarze Balken haben, werden dies dazu verwendet, die Schnittmarken besser zu positionieren.
+noad läuft als eigenständiges Programm und ist von der verwendeten VDR-Version unabhängig, solange die File-Formate von VDR nicht
+geändert werden. noad nutzt neben den eigentlichen mpeg-dateien (*.vdr) die Index-Datei von VDR und schreibt die
+Ergebnisse in die marks.vdr.
+
+Erzeugung:
+Vor dem erzeugen von noad ist die libmpeg2, Version 0.3.1, zu installieren. (siehe http://libmpeg2.sourceforge.net)
+Danach einfach make im source.Verzeichnis aufrufen.
+
+Aufruf:
+noad [- | after | before | nice] <record>
+      -         direktaufruf, volle Prozessorleistung wird genutzt
+      nice      direktaufruf, noad läuft mit geringer Priorität
+      after     wird von VDR übergeben, noad läuft als Hintergrundprozess mit geringer Priorität
+      before    wird von VDR übergeben, noad ignoriert diesen Aufruf
+
+      <record> vollständiger Pfad des Verzeichnisses mmit der Aufnahme, die bearbeitet werden soll
+
+Beispiel:
+  noad - /video/Akte_x/2003-07-18.22.08.50.50.rec
+
+noad benötigt Schreibrechte in den Aufnahmeverzeichnissen!
+
+Einbindung in VDR:
+noad kann als Programm zur Nachbearbeitung einer Aufnahme über den Paramter -r beim Aufruf von VDR angegeben werden.
+Bei Systemen, die über den VDR automatisch abgeschaltet werden, ist zu beachten, daß der Rechner nicht runtergefahren
+werden sollte, solange noad noch aktiv ist.
+
+Für das Bearbeiten vorhandener Aufnahmen sind 2 Scripte dabei:
+Fehlermeldungen, Anregungen, Hinweise und auch Erfahrungsberichte an:
+theNoad@SoftHome.net
+
