@@ -1,0 +1,4 @@
+#! /bin/sh
+
+find $1 -follow -type f -name 'cur.logo' -exec rm '{}' ';'
+

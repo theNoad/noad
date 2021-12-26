@@ -69,5 +69,6 @@ const char *getVersion();
 
 int doX11Scan(noadData *thedata, char *fName, int iNumFrames );
 const char *myTime(time_t tim);
+void clearStats();
 #endif
 

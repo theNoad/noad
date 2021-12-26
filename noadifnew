@@ -1,0 +1,10 @@
+#! /bin/sh
+
+fil="$2/cur.logo"
+if  test -a $fil
+then
+  echo "noad already done for $2"
+else
+  noad $1 $2
+fi
+

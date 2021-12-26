@@ -57,7 +57,7 @@ int main(int argc, char ** argv)
 
   if( argc > 2 &&
      (strcmp(argv[1], "after" ) == 0 ||
-      (strcmp(argv[1], "before" ) == 0 && strstr(argv[2],"@") != NULL )||
+      /*(strcmp(argv[1], "before" ) == 0 && strstr(argv[2],"@") != NULL )||*/ //not yet!
       strcmp(argv[1], "-" ) == 0 ||
       strcmp(argv[1], "nice" ) == 0 )
     )

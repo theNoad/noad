@@ -451,14 +451,14 @@ void writeInt( FILE *fd, const char */*name*/, int iVal)
 {
   fwrite(&iVal, sizeof(int), 1, fd);
 }
-int readInt( FILE *fd, const char */*name*/, int *iVal, bool ignoredata = false)
+int readInt( FILE *fd, const char *name, int *iVal, bool ignoredata = false)
 {
   int iDummy;
   if(ignoredata)
      fread(&iDummy, sizeof(int), 1, fd );
   else
      fread(iVal, sizeof(int), 1, fd );
-  //dsyslog(LOG_INFO, "noadData Load %s %d", name, *iVal);
+  dsyslog(LOG_INFO, "noadData Load %s %d", name, *iVal);
   return *iVal;
 }
 void noadData::saveCheckData( const char *name, bool bFullnameGiven )

@@ -1,0 +1,11 @@
+#! /bin/sh
+if test $# -lt 2
+then
+   echo "usage:"
+   echo "allnewnoad - <videodir>"
+   echo "or"
+   echo "allnewnoad nice <videodir>"
+   exit -1
+fi
+find $2 -follow -type d -name '*.rec' -exec ./noadifnew $1 '{}' ';'
+

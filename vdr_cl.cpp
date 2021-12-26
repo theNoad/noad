@@ -427,6 +427,7 @@ cNoadIndexFile::cNoadIndexFile(const char *FileName, bool Record):cIndexFile(Fil
   sizeEx = 0;
   lastEx = -1;
   indexEx = NULL;
+  #ifdef VNOAD
   if (FileName)
   {
     fileNameEx = new char[strlen(FileName) + strlen(INDEXFILESUFFIXEX) + 1];
@@ -497,6 +498,7 @@ cNoadIndexFile::cNoadIndexFile(const char *FileName, bool Record):cIndexFile(Fil
     else
       esyslog(LOG_ERR, "ERROR: can't copy file name '%s'", FileName);
   }
+  #endif
   if(indexEx == NULL)
     indexEx = new tIndexEx[Last()];
 

@@ -39,10 +39,10 @@ extern "C"
 //  #include "mpeg2_internal.h" // only for debug!!
 #include "convert.h"
 //#include "mm_accel.h"
-#include "video_out.h"
+//#include "video_out.h"
 #endif
 
-static const char *VERSION = "0.3.0";
+static const char *VERSION = "0.3.1";
 
 }
 
@@ -145,18 +145,46 @@ int secsForLogoDetection = 0;
 int secsForLogoCheck = 0;
 int secsForScan = 0;
 
+// from mpeg2.h, Version 0.3.2pre:
+// workaround for different state-definitions
+#if !defined(MPEG2_VERSION)
+#undef STATE_SEQUENCE
+#undef STATE_SEQUENCE_REPEATED 
+#undef STATE_GOP 
+#undef STATE_PICTURE 
+#undef STATE_SLICE_1ST 
+#undef STATE_PICTURE_2ND 
+#undef STATE_SLICE 
+#undef STATE_END 
+#undef STATE_INVALID 
+typedef enum __mpeg2_state_t
+{
+    STATE_BUFFER = 0,
+    STATE_SEQUENCE = 1,
+    STATE_SEQUENCE_REPEATED = 2,
+    STATE_GOP = 3,
+    STATE_PICTURE = 4,
+    STATE_SLICE_1ST = 5,
+    STATE_PICTURE_2ND = 6,
+    STATE_SLICE = 7,
+    STATE_END = 8,
+    STATE_INVALID = 9
+} mpeg2_state_t;
+#endif
 // from mpeg2dec.cpp
 void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
   const mpeg2_info_t * info;
-  int state;
+//  int state;
+    mpeg2_state_t state;
 
   mpeg2_buffer (mpeg2dec, current, end);
 
   info = mpeg2_info (mpeg2dec);
-  while (1)
-  {
-    state = mpeg2_parse (mpeg2dec);
+//  while (1)
+    while ((state = (mpeg2_state_t)mpeg2_parse (mpeg2dec)) != STATE_BUFFER) {
+//  {
+//    state = mpeg2_parse (mpeg2dec);
 /*
     if( state >= 0)
       dsyslog(LOG_INFO, "mpeg2state is %d(%s) pictype is %s",state, (state >= 0 && state <= 9) ? states[state] : states[0],(mpeg2dec->decoder.coding_type >= 0 && mpeg2dec->decoder.coding_type <= 4) ? pictype[mpeg2dec->decoder.coding_type] : pictype[0]);
@@ -171,6 +199,10 @@ void decode_mpeg2 (uint8_t * current, uint8_t * end)
         //if(!bUseYUV )
         //  mpeg2_convert (mpeg2dec, convert_rgb32, NULL);
       break;
+
+      case STATE_PICTURE:
+	    break;
+      
       case STATE_SLICE:
       case STATE_END:
       //if(info->display_picture)
@@ -183,6 +215,9 @@ void decode_mpeg2 (uint8_t * current, uint8_t * end)
             current_cbf ((void *)info->display_fbuf->buf[0],info->sequence->width, info->sequence->height, (void *)info->display_fbuf->buf);
           }
         }
+      break;
+
+      default:
       break;
     }
   }
@@ -889,6 +924,7 @@ bool detectLogo( cFileName *cfn, char* logoname )
       {
         end = time(NULL);
         secsForLogoDetection = end - start;
+        decodedFramesForLogoDetection = totalDecodedFrames;
         return true;
       }
     iPart++;
@@ -896,6 +932,7 @@ bool detectLogo( cFileName *cfn, char* logoname )
 
   end = time(NULL);
   secsForLogoDetection = end - start;
+  decodedFramesForLogoDetection = totalDecodedFrames;
   dsyslog(LOG_INFO, "detectLogo: no Logo found, give up");
   return false;
 }
@@ -2145,5 +2182,15 @@ const char *myTime(time_t tim)
   static char t_buf[2048];
   strftime(t_buf,2048,"%A,%d.%m.%Y %T",localtime(&tim));
   return t_buf;
+}
+
+void clearStats()
+{
+  totalDecodedFrames = 0;
+  decodedFramesForLogoDetection = 0;
+  decodedFramesForLogoCheck = 0;
+  secsForLogoDetection = 0;
+  secsForLogoCheck = 0;
+  secsForScan = 0;
 }
 

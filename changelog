@@ -1,0 +1,6 @@
+Version 0.3.1:
+- Änderungen für libmpeg 0.3.2 pre-Release
+- Bereinigung div. Compiler-Warnings
+- Ausgabe div. Statistikwerte
+- script zum bearbeiteten aller noch nicht bearbeiteten Aufnahmen (allnewnoad)
+- script zum löschen aller gespeicherten logos (clearlogos)
